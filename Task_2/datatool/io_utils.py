@@ -10,7 +10,7 @@ def read_input(path: str) -> pd.DataFrame:
     if suffix == ".csv":
         return pd.read_csv(p)
     elif suffix == ".json":
-        # supports JSON array of objects OR JSON lines (try both)
+        
         try:
             return pd.read_json(p)
         except ValueError:
