@@ -1,33 +1,33 @@
+import sys
 import argparse
 from .io_utils import read_input, write_output
 from .ingest import ingest_summary, print_ingest
 from .validate import validate_df, print_validation
 from .transform import transform_df
 
+
 def build_parser():
-    parser = argparse.ArgumentParser(prog="datatool", description="CLI Data Engineering Tool")
-    sub = parser.add_subparsers(dest="command", required=True)
+    parser = argparse.ArgumentParser(
+        prog="datatool",
+        description="CLI Data Engineering Tool"
+    )
+    sub = parser.add_subparsers(dest="command")
 
-    p_ingest = sub.add_parser("ingest", help="Read file and display dataset summary")
-    p_ingest.add_argument("input_file")
+    ingest_p = sub.add_parser("ingest", help="Ingest a file")
+    ingest_p.add_argument("input_file")
 
-    p_validate = sub.add_parser("validate", help="Run data quality checks")
-    p_validate.add_argument("input_file")
+    validate_p = sub.add_parser("validate", help="Validate a file")
+    validate_p.add_argument("input_file")
 
-    p_transform = sub.add_parser("transform", help="Clean and write data")
-    p_transform.add_argument("input_file")
-    p_transform.add_argument("output_file")
-    p_transform.add_argument("--missing", choices=["drop", "fill"], default="drop",
-                             help="How to handle missing values")
-
-    p_repl = sub.add_parser("repl", help="Start interactive datatool> session")
+    transform_p = sub.add_parser("transform", help="Transform a file")
+    transform_p.add_argument("input_file")
+    transform_p.add_argument("output_file")
+    transform_p.add_argument("--missing", choices=["drop", "fill"], default="drop")
 
     return parser
 
-def main(argv=None):
-    parser = build_parser()
-    args = parser.parse_args(argv)
 
+def run_command(args):
     if args.command == "ingest":
         df = read_input(args.input_file)
         summary = ingest_summary(df)
@@ -42,11 +42,39 @@ def main(argv=None):
         df = read_input(args.input_file)
         cleaned = transform_df(df, missing_strategy=args.missing)
         write_output(cleaned, args.output_file)
-        print(f"Saved cleaned data to: {args.output_file}")
+        print(f"Saved cleaned data to {args.output_file}")
 
-    elif args.command == "repl":
+
+def main(argv=None):
+    """
+    argv = None  -> normal run using sys.argv (terminal usage)
+    argv = [...] -> called from REPL (so we parse that list)
+    """
+    # If called from REPL, argv is a list like ["ingest", "file.csv"]
+    if argv is not None:
+        parser = build_parser()
+        args = parser.parse_args(argv)
+        if args.command is None:
+            # user typed nothing or invalid subcommand
+            parser.print_help()
+            return
+        run_command(args)
+        return
+
+    # If started without args in terminal -> interactive REPL
+    if len(sys.argv) == 1:
         from .repl import run_repl
         run_repl()
+        return
+
+    # Otherwise argparse one-shot mode using terminal args
+    parser = build_parser()
+    args = parser.parse_args()
+    if args.command is None:
+        parser.print_help()
+        return
+    run_command(args)
+
 
 if __name__ == "__main__":
     main()

@@ -10,7 +10,10 @@ HELP_TEXT = """Available commands:
 """
 
 def run_repl():
+    print("------------------------------------------------------------------")
     print("Welcome to datatool interactive mode. Type 'help' to see commands.")
+    print("------------------------------------------------------------------")
+    
     while True:
         try:
             raw = input("datatool> ").strip()
@@ -27,12 +30,12 @@ def run_repl():
             print(HELP_TEXT)
             continue
 
-        # Route REPL command into argparse CLI
+        
         try:
-            argv = shlex.split(raw)
+            argv = shlex.split(raw, posix=False)
             cli_main(argv)
         except SystemExit:
-            # argparse calls SystemExit on parse errors; keep REPL alive
+
             continue
         except Exception as e:
             print(f"Error: {e}")
